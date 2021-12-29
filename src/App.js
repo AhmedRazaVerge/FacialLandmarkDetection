@@ -23,6 +23,25 @@ import { drawMesh } from "./utilities";
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+  const mediaRecorderRef = React.useRef(null);
+
+  const handleStartCaptureClick = React.useCallback(() => {
+    console.log("vueru");
+    mediaRecorderRef.current = new MediaRecorder(webcamRef.current.stream, {
+      mimeType: "video/webm",
+    });
+    mediaRecorderRef.current.addEventListener(
+      "dataavailable",
+      handleDataAvailable
+    );
+    mediaRecorderRef.current.start();
+  }, []);
+
+  const handleDataAvailable = React.useCallback(({ data }) => {
+    if (data.size > 0) {
+      console.log(data);
+    }
+  }, []);
 
   //  Load posenet
   const runFacemesh = async () => {
@@ -32,10 +51,12 @@ function App() {
     //   scale: 0.8,
     // });
     // NEW MODEL
-    const net = await facemesh.load(facemesh.SupportedPackages.mediapipeFacemesh);
+    const net = await facemesh.load(
+      facemesh.SupportedPackages.mediapipeFacemesh
+    );
     setInterval(() => {
       detect(net);
-    }, 10);
+    }, 100);
   };
 
   const detect = async (net) => {
@@ -46,6 +67,7 @@ function App() {
     ) {
       // Get Video Properties
       const video = webcamRef.current.video;
+      // console.log("====>>", video);
       const videoWidth = webcamRef.current.video.videoWidth;
       const videoHeight = webcamRef.current.video.videoHeight;
 
@@ -61,16 +83,20 @@ function App() {
       // OLD MODEL
       //       const face = await net.estimateFaces(video);
       // NEW MODEL
-      const face = await net.estimateFaces({input:video});
-      console.log(face);
+      const face = await net.estimateFaces({ input: video });
+      // console.log(face);
 
       // Get canvas context
       const ctx = canvasRef.current.getContext("2d");
-      requestAnimationFrame(()=>{drawMesh(face, ctx)});
+      requestAnimationFrame(() => {
+        drawMesh(face, ctx);
+      });
     }
   };
 
-  useEffect(()=>{runFacemesh()}, []);
+  useEffect(() => {
+    runFacemesh();
+  }, []);
 
   return (
     <div className="App">
@@ -88,6 +114,9 @@ function App() {
             width: 640,
             height: 480,
           }}
+          onUserMedia={(a) => {
+            console.log(a);
+          }}
         />
 
         <canvas
@@ -104,6 +133,25 @@ function App() {
             height: 480,
           }}
         />
+
+        <div
+          onClick={() => {
+            handleStartCaptureClick();
+          }}
+          style={{
+            position: "absolute",
+            marginLeft: "auto",
+            marginRight: "auto",
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            zindex: 90,
+            width: 640,
+            height: 480,
+          }}
+        >
+          <h1>aaa</h1>
+        </div>
       </header>
     </div>
   );
